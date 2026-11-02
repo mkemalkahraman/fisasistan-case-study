@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="How a receipt-checking web app for a small company was built: rules in a decision table, a live dashboard, cash balances and a rule-based assistant. All screens use invented data.">
+<meta property="og:title" content="FişAsistan Case Study">
+<meta property="og:description" content="How a receipt-checking web app for a small company was built: rules in a decision table, a live dashboard, cash balances and a rule-based assistant. All screens use invented data.">
+<meta property="og:type" content="article">
+<title>FişAsistan Case Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&display=swap">
+<style>
+/* Layout: one centred column on a cool grey stage, phones as the only images, one deep-teal accent. */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --ink: #12201f;
+  --muted: #55646a;
+  --line: #d8dfe4;
+  --accent: #0f766e;
+  --accent-soft: #dff3f0;
+  --phone: #cfd7dd;
+  --shadow: 0 18px 40px -18px rgba(18, 32, 31, 0.35);
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "DM Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1517; --surface: #151f22; --ink: #e8f0ef; --muted: #9db0b3; --line: #26343a;
+    --accent: #5fd0c3; --accent-soft: #14312f; --phone: #2a3a40; --shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1517; --surface: #151f22; --ink: #e8f0ef; --muted: #9db0b3; --line: #26343a;
+  --accent: #5fd0c3; --accent-soft: #14312f; --phone: #2a3a40; --shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6; margin: 0; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+section { padding-block: 64px; border-top: 1px solid var(--line); }
+section:first-of-type { border-top: 0; }
+.label { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.08; margin: 0 0 16px; text-wrap: balance; letter-spacing: -0.02em; }
+h1 { font-size: clamp(44px, 8vw, 84px); font-weight: 800; }
+h2 { font-size: clamp(28px, 4.4vw, 42px); font-weight: 800; }
+h3 { font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
+p { margin: 0 0 14px; max-width: 62ch; }
+.lead { font-size: clamp(19px, 2.4vw, 23px); color: var(--muted); max-width: 40ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; padding: 0; list-style: none; }
+.chips li { font-family: var(--mono); font-size: 13px; border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; }
+.note { font-family: var(--mono); font-size: 13px; color: var(--muted); max-width: 60ch; }
+.phones { display: flex; justify-content: center; gap: clamp(12px, 3vw, 28px); margin-top: 36px; }
+.phone { width: min(31%, 260px); margin: 0; }
+.phone.big { width: min(60%, 290px); }
+.phone img { display: block; width: 100%; height: auto; border-radius: 26px; border: 7px solid var(--phone); box-shadow: var(--shadow); background: var(--surface); }
+.phone figcaption { font-size: 13px; color: var(--muted); margin-top: 10px; text-align: center; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; }
+.stats div { padding: 22px 20px; border-left: 1px solid var(--line); min-width: 0; }
+.stats div:first-child { border-left: 0; }
+.stats b { display: block; font-family: var(--display); font-size: clamp(30px, 4vw, 40px); font-weight: 800; line-height: 1.1; }
+.stats span { color: var(--muted); font-size: 15px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(24px, 5vw, 64px); align-items: center; }
+.row.flip .text { order: 2; }
+.row .text, .row .shots { min-width: 0; }
+.row .shots { display: flex; justify-content: center; gap: 18px; }
+.row .shots .phone { width: min(46%, 250px); }
+.row .shots .phone.one { width: min(70%, 280px); }
+ul.points { margin: 14px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+ul.points li { padding-left: 22px; position: relative; max-width: 56ch; }
+ul.points li::before { content: ""; position: absolute; left: 0; top: 0.72em; width: 10px; height: 2px; background: var(--accent); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px; min-width: 0; }
+.card .label { margin-bottom: 8px; }
+.card p { font-size: 15.5px; color: var(--muted); margin-bottom: 0; }
+.card p.lesson { color: var(--ink); margin-top: 12px; font-weight: 500; }
+.timeline { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 0; border-left: 2px solid var(--line); }
+.timeline li { padding: 0 0 26px 22px; position: relative; max-width: 64ch; }
+.timeline li::before { content: ""; position: absolute; left: -7px; top: 8px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+.timeline b { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); display: block; }
+@media (max-width: 760px) {
+  .row { grid-template-columns: 1fr; }
+  .row.flip .text { order: 0; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .stats div:nth-child(3) { border-left: 0; }
+  .stats div:nth-child(n + 3) { border-top: 1px solid var(--line); }
+  section { padding-block: 44px; }
+}
+@media (max-width: 520px) { .phones .phone.side { display: none; } .phone.big { width: min(78%, 290px); } }
+</style>
+
+</head>
+<body>
+<main class="wrap">
+  <section>
+    <p class="label">Case study · Web app</p>
+    <h1>FişAsistan</h1>
+    <p class="note">("fiş" means receipt)</p>
+    <p class="lead">Employees photograph expense receipts. A vision model reads them, the employee confirms, and the accountant gets a clean, rule-checked ledger.</p>
+    <ul class="chips"><li>Next.js 16</li><li>React 19</li><li>TypeScript strict</li><li>Supabase · Postgres</li><li>Gemini API</li><li>Vercel</li></ul>
+    <div class="phones">
+      <figure class="phone side"><img src="img/liste.webp" width="780" height="1688" alt="Receipt list for one month, grouped by day, with warning chips on two receipts"></figure>
+      <figure class="phone big"><img src="img/ozet.webp" width="780" height="1688" alt="Dashboard with the month total, a category bar and a Today to-do list"></figure>
+      <figure class="phone side"><img src="img/asistan.webp" width="780" height="1688" alt="Assistant answer card with a monthly total and a category breakdown"></figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="stats">
+      <div><b>538</b><span>automated tests, all passing</span></div>
+      <div><b>28</b><span>database migrations</span></div>
+      <div><b>87</b><span>versions in about a month</span></div>
+      <div><b>0</b><span>secret keys in the browser</span></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Why I built it</p>
+    <h2>The first version worked, but I did not trust it</h2>
+    <p>An earlier version ran as a Google Apps Script web app that wrote to a spreadsheet and a Drive folder. It worked, but uploads felt slow, receipts could not be corrected or deleted cleanly, links could not point at a single receipt, and I did not fully trust the data or the backups.</p>
+    <p>So I rebuilt it around five goals: faster uploads, a live dashboard, correcting and deleting receipts safely, links that open one receipt, and data I can trust, with real backups. The app runs every day for a small team, which keeps the feature list honest.</p>
+  </section>
+
+  <section>
+    <div class="row">
+      <div class="text">
+        <p class="label">Upload</p>
+        <h2>Photograph, check, send</h2>
+        <p>Take one photo, or use the multi-receipt mode and photograph several in a row. The model reads the receipt; the employee adds a short note and sends it. A "paid in cash" checkbox marks cash spending.</p>
+        <ul class="points">
+          <li>The same photo is caught as a duplicate even if the model reads it differently the second time</li>
+          <li>Several receipts can be sent in one go</li>
+          <li>Employees see only their own receipts, month by month</li>
+        </ul>
+        <p class="note" style="margin-top:18px">The app is in Turkish. "Fişlerim" means "my receipts"; "Elinizdeki avans" means "advance you hold".</p>
+      </div>
+      <div class="shots"><figure class="phone one"><img src="img/fislerim.webp" width="780" height="1688" loading="lazy" alt="My receipts screen with a balance card, a month picker and a list of receipts with payment status"><figcaption>The employee's own view</figcaption></figure></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="row flip">
+      <div class="text">
+        <p class="label">Rules</p>
+        <h2>Rules that live in a table, not in someone's head</h2>
+        <p>Every accounting rule is a row in a decision table. A test exists for each row, and the code follows the test. When a rule changes, the table changes first, so a contradiction shows up as a failing test instead of a wrong report.</p>
+        <ul class="points">
+          <li>VAT is checked against the gross total, and receipts with two VAT rates are solved explicitly</li>
+          <li>Spending without a proper invoice is classified by its own rule</li>
+          <li>Per-person exceptions are written as rules too, never as one-off fixes</li>
+        </ul>
+        <p class="note" style="margin-top:18px">"Eşik üstü" = over the threshold. "KDV" = VAT.</p>
+      </div>
+      <div class="shots"><figure class="phone one"><img src="img/liste.webp" width="780" height="1688" loading="lazy" alt="Receipt list where two receipts carry warning chips from the rules engine"><figcaption>Warnings come from the rules engine</figcaption></figure></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="row">
+      <div class="text">
+        <p class="label">Dashboard</p>
+        <h2>One screen for the person who answers the questions</h2>
+        <p>The dashboard updates live: the server only sends a "something changed" signal, and the page reloads its data through the authorised API. Receipts can be filtered by month, period, person, payment type and amount, and opened from a link.</p>
+        <ul class="points">
+          <li>A "Today" card lists what to do next, such as the previous month's unchecked receipts</li>
+          <li>A month-end checklist shows what is done, what is waiting and what is just informative</li>
+          <li>Next and previous arrows move through a filtered list of receipts</li>
+        </ul>
+        <p class="note" style="margin-top:18px">"Bugün yapılacaklar" = to do today. "Kapanış" = month-end close.</p>
+      </div>
+      <div class="shots">
+        <figure class="phone"><img src="img/ozet.webp" width="780" height="1688" loading="lazy" alt="Dashboard with a Today to-do list"></figure>
+        <figure class="phone"><img src="img/kapanis.webp" width="780" height="1688" loading="lazy" alt="Month-end checklist with done and waiting items"></figure>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="row flip">
+      <div class="text">
+        <p class="label">Cash</p>
+        <h2>A running balance per person</h2>
+        <p>When an employee spends their own cash, the company owes them; when the company advances cash, the employee owes the company. One running balance per person combines an opening balance, cash receipts and payments, with a change history kept by a database trigger.</p>
+        <ul class="points">
+          <li>Amounts are stored as exact decimals, never floats</li>
+          <li>The employee sees their own balance; managers see everyone's</li>
+          <li>Every opening-balance change is logged with who and when</li>
+        </ul>
+        <p class="note" style="margin-top:18px">"Açılış bakiyesi" = opening balance. "Ödeme / avans" = payment / advance.</p>
+      </div>
+      <div class="shots"><figure class="phone one"><img src="img/kasa.webp" width="780" height="1688" loading="lazy" alt="Cash ledger with an opening balance, a payment and three receipts, each with a running balance"><figcaption>Running balance after every movement</figcaption></figure></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="row">
+      <div class="text">
+        <p class="label">Assistant</p>
+        <h2>Ask in plain Turkish</h2>
+        <p>A small mascot answers questions such as "how much did we spend on fuel this month". It is a rule-based assistant, not a language model: it parses the sentence with plain rules, and the server calculates every number from the data. Sentences it cannot understand are logged, and I extend the rules from that log.</p>
+        <ul class="points">
+          <li>Employees can ask only about their own spending</li>
+          <li>Answers show the rows behind the number, with links to them</li>
+        </ul>
+        <p class="note" style="margin-top:18px">"Kategorilere göre" = by category. "Kişilere göre" = by person.</p>
+      </div>
+      <div class="shots"><figure class="phone one"><img src="img/asistan.webp" width="780" height="1688" loading="lazy" alt="Assistant answer card"><figcaption>An answer card</figcaption></figure></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Lessons from real bugs</p>
+    <h2>What actually went wrong</h2>
+    <div class="cards" style="margin-top:28px">
+      <div class="card"><p class="label">Animation</p><h3>The mascot that jumped non-stop</h3><p>On one office PC the assistant's animations ran frantically; at home they were calm. The site's "reduce motion" style shortened animations to 0.01 ms but left infinite loops running, so on a computer that reported animations as off they restarted thousands of times a second. The fix: play once and stop.</p><p class="lesson">Test on the slowest machine in the office.</p></div>
+      <div class="card"><p class="label">Dependencies</p><h3>Reading got slow overnight</h3><p>Receipt reads went from 2–3 seconds to 10–46 seconds with no change in the response size. The fix: a lean main request, and a backup model request fired after 6 seconds, where the first answer wins. The winning model is saved with the record.</p><p class="lesson">Design for a dependency that is sometimes slow.</p></div>
+      <div class="card"><p class="label">Money</p><h3>VAT that did not add up</h3><p>A receipt with two VAT rates was split wrongly by the model. The fix: a gross-total sanity check and a two-rate solver, defined first in the decision table, then in tests, then in code.</p><p class="lesson">Never trust a model's arithmetic; check the totals.</p></div>
+      <div class="card"><p class="label">Data</p><h3>A date the model invented</h3><p>A receipt with a faded date was read as a plausible but wrong date, and it was only noticed while reviewing imported data. The fix: dates far from today are flagged, and a person corrects them.</p><p class="lesson">Add a check that does not depend on the model.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Under the hood</p>
+    <h2>The parts that are not on screen</h2>
+    <div class="cards" style="margin-top:28px">
+      <div class="card"><h3>Money</h3><p>Amounts are exact decimals in the database, with no floating point. Calculations live in one place, a database function or a single TypeScript module.</p></div>
+      <div class="card"><h3>Security</h3><p>The browser never talks to the database. The secret key exists only on the server. Every table has row-level security turned on and grants nothing to anonymous or signed-in browser roles. Sessions are signed, HTTP-only cookies; employees can touch only their own uploads.</p></div>
+      <div class="card"><h3>Tests</h3><p>Decision table, then test, then code. Migrations are tested on a real Postgres engine, and a read-only database health check runs every month.</p></div>
+      <div class="card"><h3>AI and privacy</h3><p>A receipt photo (or PDF) and a fixed prompt go to a vision model, and a person confirms the result. There is no free-form chat with a model. The assistant described above uses no model at all.</p></div>
+      <div class="card"><h3>Backup and deletion</h3><p>The database is backed up daily. Deleting a receipt is soft: it can be restored for 30 days, then it is permanently removed together with its stored files.</p></div>
+      <div class="card"><h3>Phone first</h3><p>It installs from the browser. Tap targets are at least 44 px, and sticky bars hide when the keyboard opens.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Timeline</p>
+    <h2>One month, in four steps</h2>
+    <ol class="timeline">
+      <li><b>Late Sep 2026</b>First deployment, upload and storage working.</li>
+      <li><b>Early Oct</b>Dashboard, email notices, accounting rules and monthly reports. Go-live on 6 Oct, replacing the old system.</li>
+      <li><b>Mid Oct</b>VAT checks, spending thresholds and receipt filters.</li>
+      <li><b>Late Oct</b>Cash balances, live filters, the rule-based assistant and the month-end checklist.</li>
+    </ol>
+  </section>
+
+  <section>
+    <p class="label">About</p>
+    <h2>Who did what</h2>
+    <p>Product decisions, accounting rules and testing on real phones are mine. The code was written together with Claude.</p>
+    <p class="note">All screens on this page use invented names and amounts. The interface is in Turkish, and the labels are explained next to each screen.</p>
+  </section>
+</main>
+</body>
+</html>
