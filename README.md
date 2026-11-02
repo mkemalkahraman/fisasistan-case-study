@@ -15,6 +15,23 @@ A web app where employees photograph expense receipts, a vision model reads them
 - 538 automated tests, and the database migrations are tested on a real Postgres engine
 - A rule-based assistant (no language model) answers questions from figures the server calculates
 
+## What it does
+
+- **Upload:** photograph one receipt or several in a row; the model reads them and the employee confirms
+- **Rules:** VAT sanity checks, duplicate detection and per-person rules, all defined in a decision table
+- **Dashboard:** live monthly view, filters, a "Today" to-do card and a month-end checklist
+- **Cash:** a running balance per person with a change history
+- **Assistant:** ask questions in plain Turkish; answers come from server-calculated figures
+
+## Lessons from real bugs
+
+- **The mascot that jumped non-stop:** a "reduce motion" style left infinite animation loops running on one PC. Test on the slowest machine.
+- **Reading got slow overnight:** a backup model request after 6 seconds, first answer wins. Design for a slow dependency.
+- **VAT that did not add up:** the model split a two-rate receipt wrongly. Never trust a model's arithmetic; check the totals.
+- **A date the model invented:** a faded date was read as a plausible wrong one. Add a check that does not depend on the model.
+
+The full write-up is on the [case study page](https://mkemalkahraman.github.io/fisasistan-case-study/).
+
 ## About this repository
 
 - **No source code is published here.** This is a case study only.
