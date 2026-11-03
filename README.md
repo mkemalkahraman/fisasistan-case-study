@@ -12,7 +12,8 @@ A web app where employees photograph expense receipts, a vision model reads them
 - Next.js 16, React 19, TypeScript (strict), Supabase (Postgres, Storage), a Gemini vision model for reading receipts
 - Every accounting rule is a row in a decision table, and every row has a test
 - Money is stored as exact decimals; row-level security on every table; the secret key exists only on the server
-- 538 automated tests, and the database migrations are tested on a real Postgres engine
+- 580 automated tests, 18 real-browser scenarios, and the database migrations are tested on a real Postgres engine
+- Every pull request is scanned for leaked secrets and unsafe CI settings
 - A rule-based assistant (no language model) answers questions from figures the server calculates
 
 ## What it does

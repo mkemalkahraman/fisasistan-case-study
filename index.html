@@ -120,9 +120,9 @@ ul.points li::before { content: ""; position: absolute; left: 0; top: 0.72em; wi
 
   <section>
     <div class="stats">
-      <div><b>538</b><span>automated tests, all passing</span></div>
+      <div><b>580</b><span>automated tests, all passing</span></div>
       <div><b>28</b><span>database migrations</span></div>
-      <div><b>87</b><span>versions in about a month</span></div>
+      <div><b>93</b><span>versions in about five weeks</span></div>
       <div><b>0</b><span>secret keys in the browser</span></div>
     </div>
   </section>
@@ -237,8 +237,8 @@ ul.points li::before { content: ""; position: absolute; left: 0; top: 0.72em; wi
     <h2>The parts that are not on screen</h2>
     <div class="cards" style="margin-top:28px">
       <div class="card"><h3>Money</h3><p>Amounts are exact decimals in the database, with no floating point. Calculations live in one place, a database function or a single TypeScript module.</p></div>
-      <div class="card"><h3>Security</h3><p>The browser never talks to the database. The secret key exists only on the server. Every table has row-level security turned on and grants nothing to anonymous or signed-in browser roles. Sessions are signed, HTTP-only cookies; employees can touch only their own uploads.</p></div>
-      <div class="card"><h3>Tests</h3><p>Decision table, then test, then code. Migrations are tested on a real Postgres engine, and a read-only database health check runs every month.</p></div>
+      <div class="card"><h3>Security</h3><p>The browser never talks to the database. The secret key exists only on the server. Every table has row-level security turned on and grants nothing to anonymous or signed-in browser roles. Sessions are signed, HTTP-only cookies; employees can touch only their own uploads. Every pull request is scanned for leaked secrets and for unsafe workflow settings, and dependency updates arrive monthly, two at a time.</p></div>
+      <div class="card"><h3>Tests</h3><p>Decision table, then test, then code. Migrations are tested on a real Postgres engine, and a read-only database health check runs every month. The upload screen and the shared dialogs are also exercised in a real browser (18 scenarios), which caught a keyboard-focus bug that unit tests could not see.</p></div>
       <div class="card"><h3>AI and privacy</h3><p>A receipt photo (or PDF) and a fixed prompt go to a vision model, and a person confirms the result. There is no free-form chat with a model. The assistant described above uses no model at all.</p></div>
       <div class="card"><h3>Backup and deletion</h3><p>The database is backed up daily. Deleting a receipt is soft: it can be restored for 30 days, then it is permanently removed together with its stored files.</p></div>
       <div class="card"><h3>Phone first</h3><p>It installs from the browser. Tap targets are at least 44 px, and sticky bars hide when the keyboard opens.</p></div>
